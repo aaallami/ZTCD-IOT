@@ -345,7 +345,7 @@ If you use this code, please cite the original paper:
   title     = {Zero-Trust Security Architecture for {IoT}-Enabled {Tier-3}
                Data Centers: Design, Risk-Adaptive Policy Modeling,
                and Attack Surface Analysis},
-  year      = {2025}
+  year      = {2026}
 }
 ```
 
