@@ -61,53 +61,6 @@ The simulation mirrors the five components of the ZTDC-IoT framework:
 
 ---
 
-## Results Summary
-
-### Table III — Attack Surface Reduction
-
-| Threat Category | Baseline Paths | ZTDC-IoT Paths | Reduction |
-|---|---:|---:|---:|
-| T1: Sensor Spoofing | 312 | 28 | 91.0% |
-| T2: Camera Feed Manipulation | 187 | 19 | 89.8% |
-| T3: Access Control Bypass | 94 | 8 | 91.5% |
-| T4: BMS Exploitation | 76 | 11 | 85.5% |
-| T5: Lateral Movement | 1,204 | 163 | 86.5% |
-| T6: Insider Threat | 438 | 62 | 85.8% |
-| T7: Supply Chain Compromise | 156 | 24 | 84.6% |
-| **Total** | **2,467** | **315** | **87.2%** |
-
-### Table IV — BADM Detection Performance
-
-| Device Class | Detection Rate | FPR | Mean Latency |
-|---|---:|---:|---:|
-| Environmental Sensors | 96.2% | 1.8% | 34 s |
-| IP Cameras | 97.8% | 1.2% | 21 s |
-| Access Control Units | 98.9% | 0.7% | 8 s |
-| BMS Controllers | 95.4% | 2.3% | 45 s |
-| Smart PDUs | 94.1% | 2.7% | 52 s |
-| **Overall (Weighted)** | **96.8%** | **1.6%** | **32 s** |
-
-### Section V-D — Policy Enforcement Latency
-
-| Metric | Value |
-|---|---:|
-| Median latency | 47 ms |
-| 99th-percentile latency | 183 ms |
-| Fast-path (access control) | 12 ms |
-| Threshold (all values below) | 200 ms |
-
-### Overall BADM Metrics
-
-| Metric | Value |
-|---|---:|
-| Detection Rate | 96.8% |
-| False Positive Rate | 1.6% |
-| Precision | 95.9% |
-| Recall | 96.8% |
-| F1-score | 96.3% |
-
----
-
 ## Repository Structure
 
 ```
