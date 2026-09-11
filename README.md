@@ -182,9 +182,6 @@ If the datasets are not available, the simulation runs in **schema-faithful mode
 ```bash
 python ztdc_iot_simulation_v2.py
 ```
-
-Expected runtime: ~90 seconds (schema-faithful mode) or ~3–5 minutes (with real CSVs, depending on dataset size).
-
 ### Output
 
 The script prints all tables to stdout and saves a 4-panel results figure:
