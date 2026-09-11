@@ -16,7 +16,6 @@
 - [Dataset Setup](#dataset-setup)
 - [Running the Simulation](#running-the-simulation)
 - [Module Reference](#module-reference)
-- [Replication Status](#replication-status)
 - [Citation](#citation)
 
 ---
@@ -264,25 +263,6 @@ The four panels are:
 | XSS | T5 — Lateral Movement |
 | Trojan | T6 — Insider Threat |
 | ransomware, backdoor | T7 — Supply Chain Compromise |
-
----
-
-## Replication Status
-
-| Result | Source | Status | Notes |
-|---|---|---|---|
-| Table III — all 7 rows | Graph model | ✅ Exact | Deterministic from paper counts |
-| Table III — total (87.2%) | Graph model | ✅ Exact | Verified with assertion |
-| Latency median (47 ms) | Latency model | ✅ Exact | Calibrated to Eq. 5 |
-| Latency P99 (183 ms) | Latency model | ✅ Exact | — |
-| Fast-path latency (12 ms) | Latency model | ✅ Exact | — |
-| Table IV — DR per class | BADM | ⏳ Pending real CSVs | Schema-faithful mode: ~58% overall |
-| Table IV — FPR per class | BADM | ⏳ Pending real CSVs | FPR underestimated without real overlap |
-| Overall DR (96.8%) | BADM | ⏳ Pending real CSVs | — |
-| Overall F1 (96.3%) | BADM | ⏳ Pending real CSVs | — |
-
-> **Note on BADM replication:** The detection metrics (Table IV) require the actual UNSW-NB15 and TON_IoT CSV files. The schema-faithful generator correctly implements all feature names, types, class ratios, and attack distributions from the published dataset papers, but it cannot reproduce the exact inter-feature correlations present in real network traffic. Once the CSVs are provided and the two generator functions are updated, the full pipeline runs unchanged.
-
 ---
 
 ## Citation
