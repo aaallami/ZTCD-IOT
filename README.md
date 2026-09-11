@@ -10,7 +10,6 @@
 
 - [Overview](#overview)
 - [Architecture](#architecture)
-- [Results Summary](#results-summary)
 - [Repository Structure](#repository-structure)
 - [Requirements](#requirements)
 - [Installation](#installation)
