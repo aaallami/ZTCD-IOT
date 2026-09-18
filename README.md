@@ -1,287 +1,116 @@
-# ZTDC-IoT: Zero-Trust Security Architecture for IoT-Enabled Tier-3 Data Centers
+# ZTDC-IoT reproducibility code
 
-> **Simulation code for the paper:**
-> *"Zero-Trust Security Architecture for IoT-Enabled Tier-3 Data Centers: Design, Risk-Adaptive Policy Modeling, and Attack Surface Analysis"*
-> Mustafa N. Mnati, Ali Ataeemh Allami, Savitri Bevinakoppa, Mohammed Jaddoa, Mustafa S. Aljumaily
+Code used to produce the evaluation numbers reported in the paper.
 
----
+## Contents
 
-## Table of Contents
-
-- [Overview](#overview)
-- [Architecture](#architecture)
-- [Repository Structure](#repository-structure)
-- [Requirements](#requirements)
-- [Installation](#installation)
-- [Dataset Setup](#dataset-setup)
-- [Running the Simulation](#running-the-simulation)
-- [Module Reference](#module-reference)
-- [Citation](#citation)
-
----
-
-## Overview
-
-This repository provides the full simulation code that replicates all quantitative results from the paper. The codebase implements:
-
-- **Graph-based attack surface modeling** — directed graph G = (V, E) with ~2,400 IoT endpoints across 7 device classes and 4 physical security zones, used to enumerate attack paths for 7 threat categories (T1–T7) under both a baseline VLAN architecture and the proposed ZTDC-IoT zero-trust framework.
-- **Device Risk Score (DRS) engine** — implements Equation 2 from the paper: `DRS = w₁·ICS + w₂·BCS + w₃·(1−VES) + w₄·CRM`, with threshold-based policy decisions (Normal / Restricted / Quarantine).
-- **Policy enforcement latency model** — simulates `T_decision + T_network + T_enforcement` (Eq. 5) across 100,000 requests, reproducing the reported median (47 ms), P99 (183 ms), and fast-path (12 ms) values.
-- **Behavioral Anomaly Detection Module (BADM)** — hybrid Isolation Forest + LSTM Autoencoder pipeline trained on a hybrid dataset drawn from UNSW-NB15 and TON_IoT network datasets, with weighted score fusion (Eq. 4): `score = α·IF_score + (1−α)·LSTM_score`.
-
----
-
-## Architecture
-
-The simulation mirrors the five components of the ZTDC-IoT framework:
-
-```
-┌─────────────────────────────────────────────────────┐
-│              ZTDC-IoT Simulation                    │
-├──────────────┬──────────────┬───────────────────────┤
-│  System      │  Attack      │  BADM                 │
-│  Model       │  Surface     │  Pipeline             │
-│  G = (V, E)  │  Analysis    │                       │
-│              │  (Table III) │  ┌─────────────────┐  │
-│  2,400 nodes │              │  │ Isolation Forest │  │
-│  7 classes   │  DFS path    │  │ 200 trees        │  │
-│  4 zones     │  enumeration │  │ cont. = 0.01     │  │
-│              │  T1 – T7     │  ├─────────────────┤  │
-│              │              │  │ LSTM Autoencoder │  │
-│  DRS Engine  │  Latency     │  │ 3 × 64 units     │  │
-│  (Eq. 2)     │  Model       │  │ Adam lr = 0.001  │  │
-│              │  (Eq. 5)     │  ├─────────────────┤  │
-│              │              │  │ Fusion (Eq. 4)   │  │
-│              │              │  │ α·IF + (1-α)·AE  │  │
-│              │              │  └─────────────────┘  │
-└──────────────┴──────────────┴───────────────────────┘
-```
-
----
-
-## Repository Structure
-
-```
-ztdc-iot/
-│
-├── ztdc_iot_simulation_v2.py   # Main simulation — all results
-│
-├── data/                       # Dataset directory (not included — see Dataset Setup)
-│   ├── UNSW_NB15_training-set.csv
-│   ├── UNSW_NB15_testing-set.csv
-│   └── TON_IoT_Network.csv
-│
-├── outputs/
-│   └── ztdc_iot_results_v2.png # Generated figure (4-panel results plot)
-│
-└── README.md
-```
-
----
-
-## Requirements
-
-- Python 3.9 or higher
-- Ubuntu 20.04+ / macOS 12+ / Windows 10+ (WSL2 recommended on Windows)
-
-### Python packages
-
-```
-numpy>=1.23
-pandas>=1.5
-scikit-learn>=1.2
-tensorflow>=2.11
-networkx>=3.0
-matplotlib>=3.6
-```
-
----
-
-## Installation
-
-```bash
-# Clone the repository
-git clone https://github.com/<your-username>/ztdc-iot.git
-cd ztdc-iot
-
-# Create and activate a virtual environment (recommended)
-python3 -m venv venv
-source venv/bin/activate          # Linux/macOS
-# venv\Scripts\activate           # Windows
-
-# Install dependencies
-pip install numpy pandas scikit-learn tensorflow networkx matplotlib
-```
-
----
-
-## Dataset Setup
-
-The simulation uses a **hybrid dataset** combining:
-
-1. **UNSW-NB15** — Network intrusion dataset, Moustafa & Slay (2015/2016). 42 numeric features, ~175K normal + ~150K attack records.
-2. **TON_IoT** — IoT network flow dataset, Alsaedi et al. (2020). 20 numeric flow features, 10 attack categories.
-
-### Downloading the datasets
-
-Both datasets are freely available after a brief registration:
-
-| Dataset | URL |
+| File | What it does |
 |---|---|
-| UNSW-NB15 | https://research.unsw.edu.au/projects/unsw-nb15-dataset |
-| TON_IoT | https://research.unsw.edu.au/projects/toniot-datasets |
+| `style.py` | Shared Matplotlib styling (palette, axis cleanup, annotations) used by the figure-generating functions below |
+| `attack_surface.py` | Builds the baseline and ZTDC-IoT graphs, counts attack paths under the four conditions in Section III, and writes `fig_attack_paths_total.png` / `fig_attack_paths_by_threat.png` |
+| `sensitivity_sweep.py` | Sweeps the attack-surface model's parameters across their plausible ranges |
+| `latency_model.py` | Six-term policy-enforcement latency simulation (Eq. 5, Section V-E); writes `F5d_latency.png` |
+| `t8_t9_resilience.py` | Tests the corroboration/hysteresis/unknown-state logic from Section IV-C under adversarial input; writes `fig_t8_t9_resilience.png` |
+| `badm_synthetic_selfcheck.py` | Runs the BADM pipeline on synthetic data, for checking your environment before using real datasets |
+| `badm_unsw.py` | BADM evaluation on UNSW-NB15 |
+| `badm_toniot_network.py` | BADM evaluation on TON_IoT network-flow data |
+| `badm_hybrid.py` | Combined UNSW-NB15 + TON_IoT evaluation, plus the IF-only / LSTM-only ablation (Table 9) |
+| `network_emulation/` | Mininet + Open vSwitch validation with real MQTT, Modbus, and token-authentication implementations (Section V-G); see its own README |
 
-Download the following files and place them in the `data/` directory:
-
-```
-data/
-├── UNSW_NB15_training-set.csv    # from UNSW-NB15
-├── UNSW_NB15_testing-set.csv     # from UNSW-NB15
-└── TON_IoT_Network.csv           # from TON_IoT → Network dataset
-```
-
-### Activating real dataset mode
-
-Once the CSVs are in place, open `ztdc_iot_simulation_v2.py` and replace the two generator function bodies with direct CSV reads.
-
-**In `generate_unsw_nb15()` (line ~175), replace the function body with:**
-
-```python
-def generate_unsw_nb15(n_total: int, rng: np.random.RandomState) -> pd.DataFrame:
-    df_train = pd.read_csv('data/UNSW_NB15_training-set.csv')
-    df_test  = pd.read_csv('data/UNSW_NB15_testing-set.csv')
-    df = pd.concat([df_train, df_test], ignore_index=True)
-    # Rename label column if needed
-    if 'Label' in df.columns:
-        df = df.rename(columns={'Label': 'label', 'attack_cat': 'attack_cat'})
-    df['source'] = 'UNSW-NB15'
-    return df.sample(frac=1, random_state=42).reset_index(drop=True)
-```
-
-**In `generate_ton_iot()` (line ~245), replace the function body with:**
-
-```python
-def generate_ton_iot(n_total: int, rng: np.random.RandomState) -> pd.DataFrame:
-    df = pd.read_csv('data/TON_IoT_Network.csv')
-    if 'label' not in df.columns and 'Label' in df.columns:
-        df = df.rename(columns={'Label': 'label', 'type': 'type'})
-    df['source'] = 'TON_IoT'
-    return df.sample(frac=1, random_state=42).reset_index(drop=True)
-```
-
-All downstream feature mapping, BADM training, and evaluation code remains identical — only the data source changes.
-
-### Running without the datasets
-
-If the datasets are not available, the simulation runs in **schema-faithful mode**: it generates synthetic data whose per-feature distributions match the published statistical summaries (means, standard deviations, class ratios) from the original dataset papers. The attack surface analysis (Table III) and latency results (§V-D) reproduce exactly in both modes.
-
----
-
-## Running the Simulation
-
-```bash
-python ztdc_iot_simulation_v2.py
-```
-### Output
-
-The script prints all tables to stdout and saves a 4-panel results figure:
+## Setup
 
 ```
-outputs/ztdc_iot_results_v2.png
+pip install -r requirements.txt
 ```
 
-The four panels are:
-- **(a)** Attack surface comparison — Table III
-- **(b)** BADM per-class detection rate and FPR — Table IV
-- **(c)** Policy enforcement latency CDF — §V-D
-- **(d)** Overall BADM metrics vs. paper targets
+`attack_surface.py`, `sensitivity_sweep.py`, `latency_model.py`, and
+`t8_t9_resilience.py` need no external data:
 
----
-
-## Module Reference
-
-### Key constants (match paper exactly)
-
-| Constant | Value | Paper reference |
-|---|---|---|
-| `IF_N_ESTIMATORS` | 200 | §IV-E |
-| `IF_CONTAMINATION` | 0.01 | §IV-E |
-| `LSTM_UNITS` | 64 | §IV-E |
-| `LSTM_LAYERS` | 3 | §IV-E |
-| `LSTM_LR` | 0.001 | §IV-E |
-| `ALPHA_FUSION` | 0.5 | Eq. 4 |
-| `TRAIN_SPLIT` | 0.80 | §V-E |
-| `N_ATTACK_TOTAL` | 1,200 | §V-E |
-| `W1, W2, W3, W4` | 0.30, 0.30, 0.20, 0.20 | Eq. 2 |
-| `SEED` | 42 | — |
-
-### Core functions
-
-| Function | Description |
-|---|---|
-| `generate_unsw_nb15()` | UNSW-NB15 data source (swap body for `pd.read_csv`) |
-| `generate_ton_iot()` | TON_IoT data source (swap body for `pd.read_csv`) |
-| `build_hybrid_dataset()` | Combines both sources + IoT telemetry per device class |
-| `build_lstm_ae()` | 3-layer LSTM autoencoder (encoder–bottleneck–decoder) |
-| `train_and_eval_class()` | Full IF + LSTM-AE + fusion pipeline for one device class |
-| `compute_drs()` | Device Risk Score — Equation 2 |
-| `classify_drs()` | Maps DRS → Normal / Restricted / Quarantine |
-| `run_attack_surface()` | Reproduces Table III |
-| `run_latency()` | Reproduces §V-D latency statistics |
-| `make_plots()` | Generates the 4-panel results figure |
-
-### Feature schemas
-
-**UNSW-NB15** (42 numeric features used): `dur`, `spkts`, `dpkts`, `sbytes`, `dbytes`, `rate`, `sttl`, `dttl`, `sload`, `dload`, `sloss`, `dloss`, `sinpkt`, `dinpkt`, `sjit`, `djit`, `swin`, `stcpb`, `dtcpb`, `dwin`, `tcprtt`, `synack`, `ackdat`, `smean`, `dmean`, `trans_depth`, `response_body_len`, `ct_srv_src`, `ct_state_ttl`, `ct_dst_ltm`, `ct_src_dport_ltm`, `ct_dst_sport_ltm`, `ct_dst_src_ltm`, `is_ftp_login`, `ct_ftp_cmd`, `ct_flw_http_mthd`, `ct_src_ltm`, `ct_srv_dst`, `is_sm_ips_ports`, `label`, `attack_cat`.
-
-**TON_IoT** (20 numeric features used): `duration`, `src_bytes`, `dst_bytes`, `missed_bytes`, `src_pkts`, `src_ip_bytes`, `dst_pkts`, `dst_ip_bytes`, `dns_qtype`, `dns_rcode`, `dns_AA`, `dns_RD`, `dns_RA`, `dns_rejected`, `ssl_resumed`, `ssl_established`, `http_trans_depth`, `http_req_body`, `http_resp_body`, `http_status`, `label`, `type`.
-
-### Attack category mappings
-
-**UNSW-NB15 → Threat taxonomy:**
-
-| UNSW-NB15 Category | Threat |
-|---|---|
-| Fuzzers | T1 — Sensor Spoofing |
-| Analysis, Backdoors, Reconnaissance | T2 — Camera Feed Manipulation |
-| Shellcode | T3 — Access Control Bypass / T6 — Insider |
-| DoS | T4 — BMS Exploitation |
-| Exploits, Generic | T5 — Lateral Movement |
-| Worms | T7 — Supply Chain Compromise |
-
-**TON_IoT → Threat taxonomy:**
-
-| TON_IoT Type | Threat |
-|---|---|
-| MITM | T1 — Sensor Spoofing |
-| scanning | T2 — Camera Feed Manipulation |
-| password | T3 — Access Control Bypass |
-| DoS, DDoS, injection | T4 — BMS Exploitation |
-| XSS | T5 — Lateral Movement |
-| Trojan | T6 — Insider Threat |
-| ransomware, backdoor | T7 — Supply Chain Compromise |
----
-
-## Citation
-
-If you use this code, please cite the original paper:
-
-```bibtex
-@article{mnati2025ztdciot,
-  author    = {Mustafa N. Mnati and Ali Ataeemh Allami and
-               Savitri Bevinakoppa and Mohammed Jaddoa and
-               Mustafa S. Aljumaily},
-  title     = {Zero-Trust Security Architecture for {IoT}-Enabled {Tier-3}
-               Data Centers: Design, Risk-Adaptive Policy Modeling,
-               and Attack Surface Analysis},
-  year      = {2026}
-}
+```
+python3 attack_surface.py
+python3 sensitivity_sweep.py
+python3 latency_model.py
+python3 t8_t9_resilience.py
 ```
 
----
+The BADM scripts additionally need `torch` and `scikit-learn`
+(included in requirements.txt) and the datasets described below.
 
-## License
+## Datasets
 
-This simulation code is released for academic reproducibility purposes.
-The UNSW-NB15 and TON_IoT datasets are subject to their own terms of use at
-https://research.unsw.edu.au — please review those before redistributing data.
+- UNSW-NB15: https://research.unsw.edu.au/projects/unsw-nb15-dataset
+  (uses the raw capture files `UNSW-NB15_1.csv` through `_4.csv`)
+- TON_IoT: https://research.unsw.edu.au/projects/toniot-datasets
+  (uses the `Processed_Network_dataset` files)
+
+Update the file paths at the top of `badm_unsw.py`, `badm_toniot_network.py`,
+and `badm_hybrid.py` to point at your local copies.
+
+```
+python3 badm_unsw.py [seed]
+python3 badm_toniot_network.py <path_to_csv> [seed]
+python3 badm_hybrid.py
+```
+
+Seed defaults to 42.
+
+## Methodology notes
+
+**Attack surface** (`attack_surface.py`): builds a real `networkx` graph
+from the Table 1 device inventory and enumerates paths under the four
+conjunctive conditions (reachability, auth bypass, privilege escalation,
+command execution). Device zone assignment, per-class identity and
+vulnerability scores, and the max hop bound are documented assumptions
+in the script, not measured values - `sensitivity_sweep.py` checks the
+result's sensitivity to each of them.
+
+**Latency** (`latency_model.py`): each of the six terms in Eq. 5 is
+drawn from an independent distribution. T_rule's distribution is
+grounded in the flow-table update rates and control/data-plane
+divergence figures reported in Kuzniar et al. (PAM 2015). That paper
+covers switch-side performance only, not SDN controller processing, so
+T_C remains a generic estimate.
+
+**T8/T9** (`t8_t9_resilience.py`): simulates the DTI-based corroboration
+rule (quarantine requires 2 of 3 independent degraded trust components)
+and the unknown-state telemetry-loss handling under adversarial input.
+Trust-score distributions for legitimate vs. compromised devices are
+documented assumptions.
+
+**BADM** (`badm_unsw.py`, `badm_toniot_network.py`, `badm_hybrid.py`):
+LSTM autoencoder plus Isolation Forest, fused via a robust median/MAD
+Z-score with a fixed cutoff of 3.5 (standard convention, Iglewicz and
+Hoaglin 1993). Categorical features (protocol, service, connection state)
+are frequency-encoded. Byte and packet counts are log-transformed
+before standardization. Each window includes three engineered features
+- destination-IP diversity, destination-port diversity, and connection
+rate - alongside the per-flow features. The training partition contains
+only windows with no anomalous flow; the threshold is computed from
+that partition's score distribution and never touches the test labels.
+`badm_hybrid.py` calibrates the Z-score baseline separately for each
+source dataset before applying the same fixed cutoff to both, since
+UNSW-NB15 and TON_IoT traffic sit on different natural scales. It also
+reports an ablation (Table 9) comparing the fused detector against
+Isolation Forest alone and the LSTM autoencoder alone, computed from
+the per-component scores of the same trained models used for the fused
+result, rather than requiring three separate training runs.
+
+Only 4 of the TON_IoT `Processed_Network_dataset` files are referenced
+here (1, 10, 11, 12); confirm your download contains real data for
+these rather than placeholder files before running.
+
+**Network emulation** (`network_emulation/`): validates the segmentation
+mechanism against real, unmodified protocol implementations (MQTT via
+Mosquitto, Modbus TCP via pymodbus, and a token-authenticated command
+service standing in for RFID/BACnet access control) running under
+Mininet with a real Open vSwitch switch enforcing OpenFlow rules. See
+`network_emulation/README.md` for setup, which requires Mininet, Open
+vSwitch, and root privileges.
+
+## Reproducing published numbers
+
+All scripts are seeded (default 42). Runs against the same dataset
+files with the same seed reproduce the reported figures exactly for
+the deterministic scripts (`attack_surface.py`, `sensitivity_sweep.py`,
+`latency_model.py`, `t8_t9_resilience.py`) and within a percentage
+point or two for the BADM scripts, which involve stochastic training.
